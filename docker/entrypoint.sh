@@ -1,5 +1,13 @@
 #!/bin/bash
 
+# Wait for MySQL to be ready
+echo "Waiting for database connection..."
+until php artisan migrate --pretend &> /dev/null
+do
+    echo "Database is not ready yet. Retrying in 5 seconds..."
+    sleep 5
+done
+
 if [ ! -f "vendor/autoload.php" ]; then
     composer install --no-progress --no-interaction
 fi
@@ -14,8 +22,9 @@ fi
 role=${CONTAINER_ROLE:-app}
 
 if [ "$role" = "app" ]; then
-    php artisan migrate
+    php artisan migrate --force
     php artisan key:generate
+    php artisan session:table
     php artisan cache:clear
     php artisan config:clear
     php artisan route:clear
